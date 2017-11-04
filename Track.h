@@ -34,5 +34,7 @@ class Track {
 		void generate();
 		void draw();
 
-		void addNode(float x, float y, float z, int pathIndex);
+		void addNode(float x, float y, float z, float scale, int pathIndex);
+		void setNodesScaleFactor();
+		ofVec3f getBeadPositionFromScale(float beadPositionScale);
 };

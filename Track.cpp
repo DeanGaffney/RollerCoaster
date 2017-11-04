@@ -17,6 +17,7 @@ void Track::generate() {
 	nodes.clear();
 	switch (type) {
 		case(Type::LINE): {
+			float currentDistance = 0.0f;
 			for (int n = 0; n < NUM_OF_NODES; n++) {
 				double s{ 1.0 / (NUM_OF_NODES - 1) * n };
 				//get unrotated points
@@ -29,11 +30,16 @@ void Track::generate() {
 				rotationMatrix.makeRotationMatrix(0, ofVec3f(1, 0, 0), 0, ofVec3f(0, 1, 0), angle, ofVec3f(0, 0, 1));
 				ofVec3f rotatedVec = rotationMatrix.postMult(ofVec3f(x, y, z));
 				path.addVertex(rotatedVec.x, rotatedVec.y + HEIGHT, rotatedVec.z);
-				addNode(rotatedVec.x, rotatedVec.y + HEIGHT, rotatedVec.z, n);
+				if (n != 0){ 
+					currentDistance += rotatedVec.distance(nodes[n - 1]->getPos());
+				}
+				addNode(rotatedVec.x, rotatedVec.y + HEIGHT, rotatedVec.z, currentDistance, n);
 			}
+			setNodesScaleFactor();
 			break;
 		}
 		case(Type::CIRCLE): {
+			float currentDistance = 0.0f;
 			for (int n = 0; n < NUM_OF_NODES; n++) {
 				double s{ 1.0 / (NUM_OF_NODES - 1) * n };
 				//get unrotated x,z,y cordinates
@@ -46,31 +52,67 @@ void Track::generate() {
 				rotationMatrix.makeRotationMatrix(pitch, ofVec3f(1,0,0), yaw, ofVec3f(0,1,0), 0, ofVec3f(0,0,1));
 				ofVec3f rotatedVec = rotationMatrix.postMult(ofVec3f(x, y, z));
 				path.addVertex(rotatedVec.x, rotatedVec.y + HEIGHT, rotatedVec.z);
-				addNode(rotatedVec.x, rotatedVec.y + HEIGHT, rotatedVec.z, n);
+				if (n != 0) {
+					currentDistance += rotatedVec.distance(nodes[n - 1]->getPos());
+				}
+				addNode(rotatedVec.x, rotatedVec.y + HEIGHT, rotatedVec.z, currentDistance, n);
 			}
+			setNodesScaleFactor();
 			break;
 		}
 		case(Type::LOOP): {
+			float currentDistance = 0.0f;
 			for (int n = 0; n <NUM_OF_NODES; n++) {
 				double s{ 1.0 / (NUM_OF_NODES - 1) * n };
 				float x{ radius * cosf(xFactor * M_TWO_PI * s) };
 				float z{ radius * sinf(zFactor * M_TWO_PI * s)  };
 				float y{ (radius / 4) * sinf(yFactor * M_TWO_PI * s)};
 				path.addVertex(x, y + HEIGHT, z);
-			    addNode(x, y + HEIGHT, z, n);
+				if (n != 0) {
+					currentDistance += ofVec3f(x, y, z).distance(nodes[n - 1]->getPos());
+				}
+				addNode(x, y + HEIGHT, z, currentDistance, n);
 			}
 		}
+		 setNodesScaleFactor();
 		break;
 	}
 }
 
-
-void Track::addNode(float x, float y, float z, int pathIndex) {
+/**
+* Creates and adds a node to the nodes vector at the specified path index
+**/
+void Track::addNode(float x, float y, float z, float scale, int pathIndex) {
 	ofVec3f pos = ofVec3f(x, y, z);
 	ofVec3f tangent = path.getTangentAtIndex(pathIndex);
 	ofVec3f normal = path.getNormalAtIndex(pathIndex);
-	Node::Ref node = Node::Ref(new Node(pos, tangent, normal));
+	Node::Ref node = Node::Ref(new Node(pos, tangent, normal, scale));
+	
 	nodes.push_back(node);
+}
+
+/*
+* Sets all nodes on the tracks scale to be that of the scale factor
+*/
+void Track::setNodesScaleFactor() {
+	float totalDistance = nodes[nodes.size() - 1]->getScale();
+	float scaleFactor = 1.0f / totalDistance;
+	for (int i = 0; i < nodes.size(); ++i) {
+		nodes[i]->setScale(nodes[i]->getScale() * scaleFactor);
+	}
+}
+
+/**
+* Returns a vector 3 position on the track from the current bead position scale
+*/
+ofVec3f Track::getBeadPositionFromScale(float beadPositionScale){
+	for (int i = 0; i < nodes.size(); i++) {
+		float currentScale = nodes[i]->getScale();
+		if (currentScale >= beadPositionScale) {
+			return nodes[i]->getPos();
+		}
+	}
+	return ofVec3f::zero();
 }
 
 void Track::draw() {

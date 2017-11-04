@@ -12,7 +12,7 @@ public:
 	typedef ofPtr<Node> Ref;
 
 	Node();
-	Node(ofVec3f pos, ofVec3f tangent, ofVec3f normal);
+	Node(ofVec3f pos, ofVec3f tangent, ofVec3f normal, float scale);
 	ofVec3f getPos();
 	ofVec3f getTangent();
 	ofVec3f getNormal();

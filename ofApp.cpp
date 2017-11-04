@@ -38,6 +38,7 @@ void ofApp::setup() {
     ForceGenerator::Ref fg;
     
     ForceGenerator::Ref gravity(new GravityForceGenerator(ofVec3f(0, -1, 0)));
+
 	
 	track.generate();
     
@@ -57,6 +58,9 @@ void ofApp::update() {
     float dt = ofClamp(ofGetLastFrameTime(), 0.0, 0.02);
     if (!isRunning || dt<=0.0f) return;
     t += dt;
+
+	ofVec3f scaledPos = track.getBeadPositionFromScale(beadPos);
+	bead.setPosition(scaledPos);
 
     //forceGenerators.applyForce(dt);
     
@@ -96,7 +100,8 @@ void ofApp::draw() {
     for(auto p: particles) (*p).draw();
 
 	track.draw();
-	    
+	bead.draw();
+	
     easyCam.end();
     ofPopStyle();
 
@@ -234,6 +239,8 @@ void ofApp::drawMainWindow() {
 				}
 			}
 		}
+
+		ImGui::SliderFloat("Bead Position", &beadPos, 0.0f, 1.0f, "%.2f");
         
         // TODO - numeric output goes here
         if (ImGui::CollapsingHeader("Numerical Output")) {

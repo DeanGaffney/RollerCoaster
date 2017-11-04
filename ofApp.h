@@ -3,7 +3,7 @@
 #include "ofMain.h"
 #include "ofxImGui.h"
 #include "ofxXmlSettings.h"
-
+#include "./YAMPE/Particle.h";
 #include "./YAMPE/ParticleForceGeneratorRegistry.h"
 #include "Track.h";
 
@@ -55,14 +55,13 @@ public:
     ofParameter<bool> isGroundVisible = true;
     ofParameter<bool> isFullScreen;
     ofParameter<std::string> position;
-
-	Track track;
     
 private:
+	Track track;
+	YAMPE::Particle bead;
+	float beadPos;
 
     YAMPE::P::ForceGeneratorRegistry forceGenerators;
     YAMPE::ParticleRegistry particles;
-    
     bool isForceVisible;
-
 };

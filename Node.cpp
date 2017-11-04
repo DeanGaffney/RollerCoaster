@@ -4,10 +4,11 @@ Node::Node() {
 	pos = tangent = normal = ofVec3f::zero();
 }
 
-Node::Node(ofVec3f pos, ofVec3f tangent, ofVec3f normal) {
+Node::Node(ofVec3f pos, ofVec3f tangent, ofVec3f normal, float scale) {
 	this->pos = pos;
 	this->tangent = tangent;
 	this->normal = normal;
+	this->scale = scale;
 }
 
 ofVec3f Node::getPos() {
