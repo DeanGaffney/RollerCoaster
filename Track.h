@@ -37,4 +37,5 @@ class Track {
 		void addNode(float x, float y, float z, float scale, int pathIndex);
 		void setNodesScaleFactor();
 		ofVec3f getBeadPositionFromScale(float beadPositionScale);
+		ofVec3f getTangentAtPosition(float beadPositionScale);
 };

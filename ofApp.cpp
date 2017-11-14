@@ -32,14 +32,19 @@ void ofApp::setup() {
     // TODO - simulation specific stuff goes here
 
     isForceVisible = false;
-    
-    Particle::Ref p(new Particle());
-    
+        
     ForceGenerator::Ref fg;
     
     ForceGenerator::Ref gravity(new GravityForceGenerator(ofVec3f(0, -1, 0)));
 
-	
+	bead = Particle::Ref(new Particle());
+	ofVec3f scaledPos = track.getBeadPositionFromScale(beadSliderPos);
+	bead->setPosition(scaledPos);
+
+	particles.push_back(bead);
+
+	forceGenerators.add(bead, gravity);
+
 	track.generate();
     
     // finally start everything off by resetting the simulation
@@ -50,6 +55,12 @@ void ofApp::setup() {
 void ofApp::reset() {
 
     t = 0.0f;
+
+	scalePos = beadSliderPos;
+	acc = 0;
+	vel = 0;
+	ofVec3f scaledPos = track.getBeadPositionFromScale(beadSliderPos);
+	bead->setPosition(scaledPos);
     
 }
 
@@ -59,21 +70,30 @@ void ofApp::update() {
     if (!isRunning || dt<=0.0f) return;
     t += dt;
 
-	ofVec3f scaledPos = track.getBeadPositionFromScale(beadPos);
-	bead.setPosition(scaledPos);
-
-    //forceGenerators.applyForce(dt);
-    
-    // update all particles
-    
-    //for (auto p: particles) (*p).integrate(dt);
-    
-   	// deal with collisions -- special code
-    //if (particles[0]->position.y<particles[0]->radius) {
-    //    particles[0]->position.y=particles[0]->radius;
-    //    particles[0]->velocity = -particles[0]->velocity;
-    //}
-
+	ofVec3f nodeTangent = track.getTangentAtPosition(beadSliderPos);
+	float theta = nodeTangent.angle(ofVec3f(0, 1, 0)) - 90.0f;
+	
+	cout << "Theta:" << theta << "\n";
+	acc = 9.81f * sin(ofDegToRad(theta));
+	cout << "Acc: " << acc << "\n";
+	ofVec3f acceleration = nodeTangent * acc;
+	if (acc > 0) {
+		vel += dt * acceleration.length();
+		cout << "Vel Increase: " << vel << "\n";
+	}
+	else {
+		vel -= dt * acceleration.length();
+		cout << "Vel Decrease: " << vel << "\n";
+	}
+	beadSliderPos += dt * vel;
+	while (beadSliderPos > 1) {
+		beadSliderPos -= 1;
+	}
+	while (beadSliderPos < 0) {
+		beadSliderPos += 1;
+	}
+	cout << "Scale Pos:" << scalePos << "\n";
+	bead->setPosition(track.getBeadPositionFromScale(beadSliderPos));
 }
 
 void ofApp::draw() {
@@ -100,7 +120,6 @@ void ofApp::draw() {
     for(auto p: particles) (*p).draw();
 
 	track.draw();
-	bead.draw();
 	
     easyCam.end();
     ofPopStyle();
@@ -203,16 +222,19 @@ void ofApp::drawMainWindow() {
 			if (ImGui::RadioButton("Line", (track.type == Track::Type::LINE))) {
 				track.type = Track::Type::LINE;
 				track.generate();
+				reset();
 			}
 			ImGui::SameLine();
 			if (ImGui::RadioButton("Circle", (track.type == Track::Type::CIRCLE))) {
 				track.type = Track::Type::CIRCLE;
 				track.generate();
+				reset();
 			}
 			ImGui::SameLine();
 			if (ImGui::RadioButton("Loops", (track.type == Track::Type::LOOP))) {
 				track.type = Track::Type::LOOP;
 				track.generate();
+				reset();
 			}
 
 		}
@@ -221,26 +243,52 @@ void ofApp::drawMainWindow() {
 		if (ImGui::CollapsingHeader("Track Parameters")) {
 			switch (track.type) {
 				case (Track::Type::LINE): {
-					if (ImGui::SliderFloat("Angle", &track.angle, -90.0f, 90.0f, degFormat.c_str(), 1)) { track.generate(); }
+					if (ImGui::SliderFloat("Angle", &track.angle, -90.0f, 90.0f, degFormat.c_str(), 1)) { 
+						track.generate(); 
+						reset();
+					}
 					break;
 				}
 				case (Track::Type::CIRCLE): {
-					if (ImGui::SliderFloat("Radius", &track.radius, 0.0f, 8.0f, degFormat.c_str(), 1)) { track.generate(); }
-					if (ImGui::SliderFloat("Pitch", &track.pitch, 0.0f, 360.0f, degFormat.c_str(), 1)) { track.generate(); }
-					if (ImGui::SliderFloat("Yaw", &track.yaw, 0.0f, 360.0f, degFormat.c_str(), 1)) { track.generate(); }
+					if (ImGui::SliderFloat("Radius", &track.radius, 0.0f, 8.0f, degFormat.c_str(), 1)) { 
+						track.generate(); 
+						reset();
+					}
+					if (ImGui::SliderFloat("Pitch", &track.pitch, 0.0f, 360.0f, degFormat.c_str(), 1)) { 
+						track.generate();
+						reset();
+					}
+					if (ImGui::SliderFloat("Yaw", &track.yaw, 0.0f, 360.0f, degFormat.c_str(), 1)) { 
+						track.generate();
+						reset();
+					}
 					break;
 				}
 				case(Track::Type::LOOP): {
-					if (ImGui::SliderFloat("Radius", &track.radius, 0.0f, 8.0f, degFormat.c_str(), 1)) { track.generate(); }
-					if (ImGui::SliderFloat("XFactor", &track.xFactor, 0.0f, 10.0f, degFormat.c_str(), 1)) { track.generate(); }
-					if (ImGui::SliderFloat("ZFactor", &track.zFactor, 0.0f, 10.0f, degFormat.c_str(), 1)) { track.generate(); }
-					if (ImGui::SliderFloat("YFactor", &track.yFactor, 0.0f, 10.0f, degFormat.c_str(), 1)) { track.generate(); }
+					if (ImGui::SliderFloat("Radius", &track.radius, 0.0f, 8.0f, degFormat.c_str(), 1)) { 
+						track.generate(); 
+						reset();
+					}
+					if (ImGui::SliderFloat("XFactor", &track.xFactor, 0.0f, 10.0f, degFormat.c_str(), 1)) { 
+						track.generate(); 
+						reset();
+					}
+					if (ImGui::SliderFloat("ZFactor", &track.zFactor, 0.0f, 10.0f, degFormat.c_str(), 1)) { 
+						track.generate(); 
+						reset();
+					}
+					if (ImGui::SliderFloat("YFactor", &track.yFactor, 0.0f, 10.0f, degFormat.c_str(), 1)) { 
+						track.generate(); 
+						reset();
+					}
 					break;
 				}
 			}
 		}
 
-		ImGui::SliderFloat("Bead Position", &beadPos, 0.0f, 1.0f, "%.2f");
+		if (ImGui::SliderFloat("Bead Position", &beadSliderPos, 0.0f, 1.0f, "%.2f")) {
+			bead->setPosition(track.getBeadPositionFromScale(beadSliderPos));
+		}
         
         // TODO - numeric output goes here
         if (ImGui::CollapsingHeader("Numerical Output")) {

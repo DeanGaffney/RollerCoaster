@@ -102,6 +102,16 @@ void Track::setNodesScaleFactor() {
 	}
 }
 
+ofVec3f Track::getTangentAtPosition(float beadPositionScale) {
+	for (int i = 0; i < nodes.size(); i++) {
+		float currentScale = nodes[i]->getScale();
+		if (currentScale >= beadPositionScale) {
+			return nodes[i]->getTangent();
+		}
+	}
+	return ofVec3f::zero();
+}
+
 /**
 * Returns a vector 3 position on the track from the current bead position scale
 */

@@ -57,9 +57,14 @@ public:
     ofParameter<std::string> position;
     
 private:
+
+	float acc;
+	float vel;
+	float scalePos;
+
 	Track track;
-	YAMPE::Particle bead;
-	float beadPos;
+	YAMPE::Particle::Ref bead;
+	float beadSliderPos;
 
     YAMPE::P::ForceGeneratorRegistry forceGenerators;
     YAMPE::ParticleRegistry particles;
